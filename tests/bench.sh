@@ -61,7 +61,8 @@ git config --global user.email bench@example.com
 git config --global init.defaultBranch main
 git config --global advice.detachedHead false
 [ -z "${THREADS:-}" ] || git config --global lfs.concurrenttransfers "$THREADS"
-git lfs install >/dev/null
+# --skip-repo и cd: не трогать хуки репозитория, из которого запущен скрипт
+(cd "$W" && git lfs install --skip-repo >/dev/null)
 
 # Тестовый сервер отвечает по HTTP/1.0 (соединение на каждый запрос), поэтому
 # увеличиваем очередь входящих соединений: при стандартных 5 часть соединений
