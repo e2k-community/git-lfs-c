@@ -53,6 +53,13 @@ target_compile_definitions(lfscore PUBLIC
 if(LFS_BUILTIN_SHA256)
   target_compile_definitions(lfscore PUBLIC LFS_BUILTIN_SHA256)
 endif()
+# Хеширование — самое горячее место. На e2k -O2 даёт ~77 МБ/с, -O3 ~124 (lcc)
+# и ~141 (clang), поэтому -O3 для этого файла и в RelWithDebInfo (там -O2).
+# Опции файла идут в командной строке последними и перекрывают -O2.
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|LCC")
+  set_source_files_properties(src/sha256.c PROPERTIES
+    COMPILE_OPTIONS "$<$<NOT:$<CONFIG:Debug>>:-O3>")
+endif()
 target_include_directories(lfscore PUBLIC src)
 target_link_libraries(lfscore PUBLIC PkgConfig::CURL PkgConfig::CRYPTO Threads::Threads)
 
