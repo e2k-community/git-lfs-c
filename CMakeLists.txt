@@ -14,6 +14,16 @@ find_package(Threads REQUIRED)
 pkg_check_modules(CURL REQUIRED IMPORTED_TARGET libcurl)
 pkg_check_modules(CRYPTO REQUIRED IMPORTED_TARGET libcrypto)
 
+# Своя реализация SHA-256 вместо OpenSSL. На e2k у OpenSSL только generic C,
+# и своя вдвое быстрее; на x86/ARM OpenSSL использует аппаратные инструкции.
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^e2k")
+  set(LFS_BUILTIN_SHA256_DEFAULT ON)
+else()
+  set(LFS_BUILTIN_SHA256_DEFAULT OFF)
+endif()
+option(LFS_BUILTIN_SHA256 "Use built-in SHA-256 instead of OpenSSL" ${LFS_BUILTIN_SHA256_DEFAULT})
+message(STATUS "SHA-256: ${LFS_BUILTIN_SHA256} (LFS_BUILTIN_SHA256)")
+
 # Всё, кроме main.c, — в библиотеку: её же линкуют unit-тесты
 add_library(lfscore STATIC
   src/util.c
@@ -21,6 +31,7 @@ add_library(lfscore STATIC
   src/json.c
   src/pktline.c
   src/pointer.c
+  src/sha256.c
   src/git.c
   src/store.c
   src/http.c
@@ -39,6 +50,9 @@ target_compile_definitions(lfscore PUBLIC
   _GNU_SOURCE
   LFS_VERSION="${PROJECT_VERSION}"
 )
+if(LFS_BUILTIN_SHA256)
+  target_compile_definitions(lfscore PUBLIC LFS_BUILTIN_SHA256)
+endif()
 target_include_directories(lfscore PUBLIC src)
 target_link_libraries(lfscore PUBLIC PkgConfig::CURL PkgConfig::CRYPTO Threads::Threads)
 

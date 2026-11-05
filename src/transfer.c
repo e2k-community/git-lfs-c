@@ -6,7 +6,6 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <openssl/evp.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
@@ -112,7 +111,7 @@ static struct json *batch_request(struct endpoint *e, const char *op,
 
 struct dl_ctx {
 	int fd;
-	EVP_MD_CTX *md;
+	struct sha256 md;
 	long long got;
 	int err;
 };
@@ -125,7 +124,7 @@ static size_t dl_sink(const void *data, size_t n, void *ctx)
 		d->err = errno;
 		return 0;
 	}
-	EVP_DigestUpdate(d->md, data, n);
+	sha256_update(&d->md, data, n);
 	d->got += (long long)n;
 	return n;
 }
@@ -139,7 +138,7 @@ static int download_one(struct endpoint *e, const struct lfs_obj *o,
 	struct curl_slist *h;
 	struct http_req r;
 	struct dl_ctx d;
-	unsigned char dig[EVP_MAX_MD_SIZE];
+	unsigned char dig[32];
 	char hex[65], *tmp = NULL;
 	long code;
 	int ret = -1, cerr;
@@ -149,11 +148,9 @@ static int download_one(struct endpoint *e, const struct lfs_obj *o,
 		return -1;
 	}
 	d.fd = lfs_tmpfile(&tmp);
-	d.md = EVP_MD_CTX_new();
+	sha256_init(&d.md);
 	d.got = 0;
 	d.err = 0;
-	if (!d.md || !EVP_DigestInit_ex(d.md, lfs_sha256(), NULL))
-		die("sha256 init failed");
 
 	h = headers_from_json(NULL, json_get(action, "header"), &f);
 	http_req_init(&r);
@@ -166,8 +163,7 @@ static int download_one(struct endpoint *e, const struct lfs_obj *o,
 	action_auth(e, &r, href, &f);
 	code = http_do(&r);
 	curl_slist_free_all(h);
-	EVP_DigestFinal_ex(d.md, dig, NULL);
-	EVP_MD_CTX_free(d.md);
+	sha256_final(&d.md, dig);
 	hex_encode(dig, 32, hex);
 	cerr = close(d.fd);
 
@@ -388,7 +384,7 @@ int lfs_transfer(const char *remote, const char *operation,
 	/* всё ленивое кешируем до потоков */
 	lfs_dir();
 	http_init();
-	lfs_sha256();
+	sha256_prepare();
 	lfs_concurrency();
 	e = endpoint_get(remote ? remote : lfs_default_remote(), operation);
 

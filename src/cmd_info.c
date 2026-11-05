@@ -3,6 +3,7 @@
 #include "git.h"
 #include "run.h"
 #include "scan.h"
+#include "sha256.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -183,6 +184,7 @@ int cmd_env(int argc, char **argv)
 		printf("TempDir=%s/tmp\n", lfs_dir());
 	}
 	printf("ConcurrentTransfers=%d\n", lfs_concurrency());
+	printf("SHA256=%s\n", sha256_impl());
 	printf("BasicTransfersOnly=true\n");
 	inc = lfs_config("lfs.fetchinclude");
 	exc = lfs_config("lfs.fetchexclude");

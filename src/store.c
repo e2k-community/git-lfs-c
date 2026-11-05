@@ -4,38 +4,18 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 static int skip_flag;
 
-static const EVP_MD *sha256_md;
-static pthread_once_t sha256_once = PTHREAD_ONCE_INIT;
-
-static void sha256_init(void)
-{
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-	sha256_md = EVP_MD_fetch(NULL, "SHA256", NULL);
-#endif
-	if (!sha256_md)
-		sha256_md = EVP_sha256();
-}
-
-const EVP_MD *lfs_sha256(void)
-{
-	pthread_once(&sha256_once, sha256_init);
-	return sha256_md;
-}
 
 void cleaner_init(struct cleaner *c)
 {
 	memset(c, 0, sizeof(*c));
 	c->fd = -1;
-	c->md = EVP_MD_CTX_new();
-	if (!c->md || !EVP_DigestInit_ex(c->md, lfs_sha256(), NULL))
-		die("sha256 init failed");
+	sha256_init(&c->md);
 }
 
 static void cleaner_spill(struct cleaner *c)
@@ -47,7 +27,7 @@ static void cleaner_spill(struct cleaner *c)
 
 void cleaner_write(struct cleaner *c, const void *data, size_t n)
 {
-	EVP_DigestUpdate(c->md, data, n);
+	sha256_update(&c->md, data, n);
 	c->size += (long long)n;
 	if (c->fd < 0 && c->headlen + n <= POINTER_MAX) {
 		memcpy(c->head + c->headlen, data, n);
@@ -62,12 +42,10 @@ void cleaner_write(struct cleaner *c, const void *data, size_t n)
 
 void cleaner_finish(struct cleaner *c, struct strbuf *out)
 {
-	unsigned char dig[EVP_MAX_MD_SIZE];
+	unsigned char dig[32];
 	struct pointer p;
 
-	EVP_DigestFinal_ex(c->md, dig, NULL);
-	EVP_MD_CTX_free(c->md);
-	c->md = NULL;
+	sha256_final(&c->md, dig);
 
 	if (c->fd < 0) {
 		if (!c->headlen || !pointer_parse(c->head, c->headlen, &p)) {

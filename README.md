@@ -16,6 +16,14 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
+На Эльбрусе (e2k) лучше собирать clang'ом и в режиме Release: на хешировании
+он даёт примерно на 15 % больше, чем lcc.
+
+```sh
+CC=clang cmake -S . -B build-rel -DCMAKE_BUILD_TYPE=Release
+cmake --build build-rel
+```
+
 - `unit`: разборщики (JSON, pointer, pkt-line, URL, шаблоны путей), запуск
   дочерних процессов, clean во временном репозитории;
 - `integration` (`tests/run.sh build/git-lfs`): около 140 проверок на настоящем
@@ -77,6 +85,15 @@ ctest --test-dir build --output-on-failure
   все файлы сразу, и они скачиваются одним batch-запросом в несколько потоков,
   а не по одному. Отключается через `GIT_LFS_NO_DELAY=1`.
 - `pre-push` собирает все объекты в один batch (по 100 объектов на запрос).
+- SHA-256: на e2k используется своя реализация (`src/sha256.c`), на
+  Эльбрус-8СВ она примерно вдвое быстрее OpenSSL (141 против 63 МБ/с с clang),
+  потому что у OpenSSL для e2k нет оптимизированного кода. На остальных
+  архитектурах используется OpenSSL с аппаратными инструкциями. Выбор
+  переопределяется опцией `-DLFS_BUILTIN_SHA256=ON|OFF`, текущая реализация
+  видна в `git lfs env` (`SHA256=builtin|openssl`). Замеры вариантов лежат в
+  `experiments/sha256`.
+- `tests/bench.sh <путь к git-lfs>` замеряет основные команды на одинаковом
+  наборе данных; так сравниваются реализации между собой.
 
 ## Откуда берётся адрес LFS-сервера
 

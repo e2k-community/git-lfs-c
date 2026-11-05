@@ -6,6 +6,7 @@
 #include "pktline.h"
 #include "pointer.h"
 #include "run.h"
+#include "sha256.h"
 #include "store.h"
 #include "util.h"
 
@@ -314,6 +315,86 @@ static void test_run(void)
 }
 
 /* clean во временном репозитории: объект ложится в .git/lfs/objects */
+static void builtin_hex(const void *data, size_t n, char hex[65])
+{
+	struct sha256_builtin c;
+	unsigned char dig[32];
+
+	sha256_builtin_init(&c);
+	sha256_builtin_update(&c, data, n);
+	sha256_builtin_final(&c, dig);
+	hex_encode(dig, 32, hex);
+}
+
+/* Своя реализация SHA-256 проверяется всегда, даже если в сборке выбран OpenSSL */
+static void test_sha256(void)
+{
+	static const char *abc56 = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
+	unsigned char *data, want[32], got[32];
+	char hex[65];
+	uint64_t x = 0x9e3779b97f4a7c15ull;
+	size_t i, len, pos;
+	int bad = 0, t;
+
+	builtin_hex("", 0, hex);
+	CHECK_STR(hex, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+	builtin_hex("abc", 3, hex);
+	CHECK_STR(hex, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+	builtin_hex(abc56, strlen(abc56), hex);
+	CHECK_STR(hex, "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1");
+
+	data = malloc(70000);
+	CHECK(data != NULL);
+	if (!data)
+		return;
+	for (i = 0; i < 70000; i++) {
+		x ^= x << 13;
+		x ^= x >> 7;
+		x ^= x << 17;
+		data[i] = (unsigned char)(x >> 24);
+	}
+	/* все остатки по модулю 64 и границы паддинга, затем случайные длины и нарезка */
+	for (t = 0; t < 600 && !bad; t++) {
+		struct sha256_builtin c;
+		unsigned int seed = (unsigned int)t * 2654435761u;
+
+		len = t < 300 ? (size_t)t : seed % 70000;
+		if (!EVP_Digest(data, len, want, NULL, EVP_sha256(), NULL)) {
+			bad = 1;
+			break;
+		}
+		sha256_builtin_init(&c);
+		for (pos = 0; pos < len;) {
+			size_t k = (seed = seed * 1103515245u + 12345u) >> 16;
+
+			k = (pos & 1) ? k % 130 : k % 9000;
+			if (k > len - pos)
+				k = len - pos;
+			sha256_builtin_update(&c, data + pos, k);
+			pos += k;
+		}
+		sha256_builtin_final(&c, got);
+		if (memcmp(want, got, 32)) {
+			fprintf(stderr, "sha256 builtin mismatch, len %zu\n", len);
+			bad = 1;
+		}
+	}
+	CHECK(!bad);
+
+	/* выбранная в сборке реализация через общий интерфейс */
+	{
+		struct sha256 c;
+
+		sha256_init(&c);
+		sha256_update(&c, "ab", 2);
+		sha256_update(&c, "c", 1);
+		sha256_final(&c, got);
+		hex_encode(got, 32, hex);
+		CHECK_STR(hex, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+	}
+	free(data);
+}
+
 static void test_cleaner(void)
 {
 	char tmpl[] = "/tmp/lfs-unit-XXXXXX";
@@ -374,6 +455,7 @@ int main(void)
 	test_url();
 	test_util();
 	test_run();
+	test_sha256();
 	test_cleaner();
 	printf("%d checks, %d failures\n", checks, failures);
 	return failures ? 1 : 0;

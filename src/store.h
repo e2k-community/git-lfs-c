@@ -2,8 +2,7 @@
 #define LFS_STORE_H
 
 #include "pointer.h"
-
-#include <openssl/evp.h>
+#include "sha256.h"
 
 /*
  * clean: потоково считает sha256 и складывает содержимое в .git/lfs/objects.
@@ -11,16 +10,13 @@
  * отдаём его git'у как есть и объект не создаём.
  */
 struct cleaner {
-	EVP_MD_CTX *md;
+	struct sha256 md;
 	char head[POINTER_MAX];
 	size_t headlen;
 	int fd;
 	char *tmp;
 	long long size;
 };
-
-/* SHA-256 один раз на процесс (в OpenSSL 3 EVP_sha256() каждый раз ищет реализацию) */
-const EVP_MD *lfs_sha256(void);
 
 void cleaner_init(struct cleaner *c);
 void cleaner_write(struct cleaner *c, const void *data, size_t n);
