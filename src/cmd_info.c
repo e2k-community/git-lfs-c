@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 Valentine Vasilenko */
 #include "commands.h"
 #include "endpoint.h"
 #include "git.h"

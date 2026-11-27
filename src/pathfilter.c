@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 Valentine Vasilenko */
 #include "pathfilter.h"
 #include "git.h"
 #include "util.h"

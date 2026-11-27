@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 Valentine Vasilenko */
 #include "store.h"
 #include "git.h"
 #include "transfer.h"

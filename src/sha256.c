@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 Valentine Vasilenko */
 #include "sha256.h"
 #include "util.h"
 

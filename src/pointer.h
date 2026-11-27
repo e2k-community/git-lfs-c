@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 Valentine Vasilenko */
 #ifndef LFS_POINTER_H
 #define LFS_POINTER_H
 

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 Valentine Vasilenko */
 /* Unit-тесты для разборщиков и вспомогательных модулей */
 #include "endpoint.h"
 #include "git.h"

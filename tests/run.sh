@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Valentine Vasilenko
 # Интеграционный тест: tests/run.sh <путь к собранному git-lfs>
 # Поднимает локальные LFS-серверы и гоняет реальные сценарии git: push/clone/pull
 # по HTTP, basic-auth, SSH (подставной ssh), параллельная и отложенная загрузка,

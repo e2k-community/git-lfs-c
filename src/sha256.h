@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 Valentine Vasilenko */
 #ifndef LFS_SHA256_H
 #define LFS_SHA256_H
 

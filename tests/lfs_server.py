@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Valentine Vasilenko
 """Минимальный LFS-сервер для тестов: Batch API, basic transfer, Locking API.
 
 Аргументы: <каталог хранилища> <файл, куда записать порт>

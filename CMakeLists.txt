@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Valentine Vasilenko
 cmake_minimum_required(VERSION 3.10)
 project(git-lfs-c VERSION 0.2.0 LANGUAGES C)
 

@@ -135,3 +135,7 @@ HTTPS: логин и пароль из URL, иначе `git credential fill` п�
 - транспорты, кроме `basic` (tus, custom transfer agents);
 - `lockable`-файлы (только для чтения без блокировки) и проверка блокировок в `pre-push`;
 - расширения pointer'ов (`ext-*`), NTLM/Kerberos.
+
+## Лицензия
+
+MIT, см. [LICENSE](LICENSE).

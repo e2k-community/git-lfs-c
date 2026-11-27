@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Valentine Vasilenko
 # Замер скорости команд git-lfs на одинаковом наборе данных.
 #
 #   tests/bench.sh <путь к git-lfs>
